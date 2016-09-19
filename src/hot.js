@@ -1,25 +1,27 @@
-var chokidar = require('chokidar');
-var webpack = require('webpack');
 var path = require('path');
-var config = require('../webpack.config');
+var webpack = require('webpack');
+var fs = require('fs');
+var requireModulesWithWebpack = require('./requireModulesWithWebpack');
 
-module.exports = function (app) {
-  var watcher = chokidar.watch(
-    path.resolve(__dirname, '..', 'build', 'router.js')
-  );
 
-  watcher.on('ready', function () {
-    watcher.on('all', function () {
-      Object.keys(require.cache).forEach(function (id) {
-        if (path.resolve(__dirname, '..', 'build', 'router.js') == id) delete require.cache[id]
-      })
-    });
+module.exports = function (app, webpackConfig) {
+  var compiler = webpack(webpackConfig);
+
+  requireModulesWithWebpack.setup(webpackConfig);
+
+  var devMiddleware = require('webpack-dev-middleware')(compiler, {
+    quiet: true,
+    publicPath: webpackConfig[0].output.publicPath,
+    serverSideRender: true,
+    reporter: function () {
+      requireModulesWithWebpack.patch(devMiddleware);
+    }
   });
 
-  var compiler = webpack(config);
+  // requireModulesWithWebpack(devMiddleware, webpackConfig);
 
-  compiler.watch({
-    aggregateTimeout: 300
-  }, function (err, stats) {
-  });
+  var hotMiddleware = require('webpack-hot-middleware')(compiler);
+
+  app.use(devMiddleware);
+  app.use(hotMiddleware);
 };

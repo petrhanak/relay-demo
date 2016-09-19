@@ -1,7 +1,21 @@
 var path = require('path');
 var webpack = require('webpack');
+var nodeExternals = require('webpack-node-externals');
+var _ = require('lodash');
 
-var client = {
+var common = {
+  module: {
+    loaders: [
+      {
+        test: /\.js$/,
+        exclude: 'node_modules',
+        loader: 'babel-loader'
+      }
+    ]
+  }
+};
+
+var client = _.merge({}, common, {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
   ],
@@ -11,13 +25,13 @@ var client = {
     ]
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build', 'dist'),
     filename: '[name]-[hash].js',
     publicPath: '/static/'
   }
-};
+});
 
-var server = {
+var server = _.merge({}, common, {
   entry: path.resolve(__dirname, 'src', 'router', 'index.js'),
   target: 'node',
   output: {
@@ -25,19 +39,10 @@ var server = {
     path: path.resolve(__dirname, 'build'),
     libraryTarget: 'commonjs2',
   },
-  module: {
-    loaders: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'babel-loader'
-      }
-    ]
-  }
-};
+});
 
 
 module.exports = [
-  // client,
+  client,
   server
 ];
